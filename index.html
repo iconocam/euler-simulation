@@ -104,6 +104,116 @@ body::before {
     margin-bottom: 32px;
   }
 
+   /* ── Act card ────────────────────────────────────────── */
+  .act-card {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    padding: 28px 28px 24px;
+    margin-bottom: 20px;
+    transition: border-color 0.25s, box-shadow 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .act-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--stripe-color, var(--accent));
+    opacity: 0.6;
+  }
+
+  .act-card:hover {
+    border-color: rgba(0, 200, 255, 0.25);
+    box-shadow: 0 0 24px rgba(0, 200, 255, 0.05);
+  }
+
+  .act-card.wip {
+    opacity: 0.45;
+    pointer-events: none;
+  }
+
+  .act-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    gap: 12px;
+  }
+
+  .act-num {
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+
+  .act-status {
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .act-status.live   { color: var(--accent); }
+  .act-status.wip    { color: var(--dim); }
+
+  .act-title {
+    font-size: 17px;
+    font-weight: normal;
+    letter-spacing: 0.05em;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+
+  .act-eq {
+    font-size: 11px;
+    color: var(--dim);
+    margin-bottom: 12px;
+    letter-spacing: 0.04em;
+  }
+
+  .act-desc {
+    font-size: 12px;
+    color: var(--dim);
+    line-height: 1.7;
+    margin-bottom: 18px;
+    max-width: 560px;
+  }
+
+  .act-params {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+
+  .param-tag {
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    border: 1px solid var(--border);
+    padding: 3px 10px;
+    color: var(--dim);
+  }
+
+  .act-link {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    text-decoration: none;
+    border: 1px solid rgba(0, 255, 204, 0.3);
+    padding: 7px 18px;
+    transition: all 0.2s;
+  }
+
+  .act-link:hover {
+    background: rgba(0, 255, 204, 0.07);
+    box-shadow: 0 0 14px rgba(0, 255, 204, 0.12);
+  }
+
 <body>
 
 </body>
