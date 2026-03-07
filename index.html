@@ -295,6 +295,12 @@ em {
     font-style: normal;
     color: rgba(200, 230, 255, 0.95);
   }
+
+  .core-idea {
+  color: var(--accent);
+  letter-spacing: 0.12em;
+  font-size: 11px;
+}
 </style>
 </head>
 <body>
@@ -364,9 +370,24 @@ Given a state <em>y</em> and its rate of change <em>f(t, y)</em>, each step adva
       <span class="eq-arr">→</span>
       <span class="eq-def">how fast the system is changing</span>
     </div>
+    <div>
+      <p>The value a moment from now equals the value right now plus a small change</p>
+    </div>
   </div>
 </div>
 
+<p style="margin-bottom:16px;">
+    This method is simple and first-order, yet surprisingly powerful. Its approximations introduce small errors, and those errors accumulate as the steps continue. But that accumulation is not just a limitation — it can also be revealing. </br>
+    <em class="core-idea">CORE IDEA:</em>
+    In many biological systems, where precision is never perfect and processes drift over time, Euler’s step feels almost honest. It lets us watch change unfold step by step, the way it often does in nature.
+  </p>
+
+  <p>
+    Each simulation below applies this step to a different system.
+    The parameters are yours to control.
+  </p>
+
+  <hr class="divider">
 
 
 
