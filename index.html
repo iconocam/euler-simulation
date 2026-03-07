@@ -233,6 +233,41 @@ body::before {
     margin-bottom: 8px;
 }
 
+/* ── Equation breakdown ──────────────────────────────── */
+.eq-breakdown {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(0, 255, 100, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.eq-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.eq-sym {
+  font-size: 12px;
+  color: #00ff88;
+  text-shadow: 0 0 10px rgba(0, 255,120, 0.5);
+  min-width: 90px;
+  letter-spacing: 0.04em;
+}
+
+.eq-arr {
+  color: rgba(0, 200, 100, 0.4);
+  font-size: 11px;
+}
+
+.eq-def {
+  font-size: 11px;
+  color: rgba(140, 210, 170, 0.75);
+  letter-spacing: 0.03em;
+}
+
 footer {
     margin-top: 80px;
     padding-top: 24px;
@@ -274,12 +309,76 @@ em {
 <p>
     Every living system changes. Cells consume energy, memories reorganize, networks grow and sometimes collapse. These processes follow mathematical laws that describe how systems evolve through time.
 
-In many natural systems, the rate of change depends on the current state of the system itself. Population growth, radioactive decay, neural activity, and chemical reactions can all be described with differential equations where change is proportional to what already exists.
+In many natural systems, the rate of change depends on the current state of the system itself. Population growth, radioactive decay, neural activity, and chemical reactions can all be described with differential equations where <em>change is proportional to what already exists</em>.
 
 The Euler method offers a simple way to approximate these dynamics. Instead of solving an equation all at once, we move forward through time in small steps, repeatedly updating the system using its current rate of change. Step by step, the future unfolds from the present.
 
 Through this lens, we can watch systems evolve: structures form, stabilize, and sometimes disperse as energy spreads and entropy increases. What appears as decay or collapse is often just the natural consequence of systems following the mathematics that governs change.
 </p>
+</header>
+
+<hr class="divider">
+
+<div class="section-label">The Method</div>
+
+<p style="margin-bottom:16px;">
+<em>TRUST:</em> You don't decide to trust someone completely on day one. You extend a small amount, observe how it's received, extend slightly more or retract slightly — each interaction a step, each step governed by the current state of the relationship. Trust is an Euler integration over time. So is its collapse. The decay term is always present. The question is whether or not the growth term exceeds it.
+</br>
+
+Given a state <em>y</em> and its rate of change <em>f(t, y)</em>, each step advances:
+
+</p>
+
+<!-- <div class="eq-block">
+    <div class="eq-label">Euler Step</div>
+    y(t + dt) &nbsp;=&nbsp; y(t) &nbsp;+&nbsp; dt &middot; f(t, y(t))
+  </div> -->
+
+<div class="eq-block">
+  <div class="eq-label">Euler Step</div>
+  y(t + dt) &nbsp;=&nbsp; y(t) &nbsp;+&nbsp; dt &middot; f(t, y(t))
+
+  <div class="eq-breakdown">
+    <div class="eq-row">
+      <span class="eq-sym">y(t + dt)</span>
+      <span class="eq-arr">→</span>
+      <span class="eq-def">the next state after the step</span>
+    </div>
+    <div class="eq-row">
+      <span class="eq-sym">y(t)</span>
+      <span class="eq-arr">→</span>
+      <span class="eq-def">the current state of the system</span>
+    </div>
+    <div class="eq-row">
+      <span class="eq-sym">dt</span>
+      <span class="eq-arr">→</span>
+      <span class="eq-def">a tiny step forward in time</span>
+    </div>
+    <div class="eq-row">
+      <span class="eq-sym">t</span>
+      <span class="eq-arr">→</span>
+      <span class="eq-def">time</span>
+    </div>
+    <div class="eq-row">
+      <span class="eq-sym">f(t, y)</span>
+      <span class="eq-arr">→</span>
+      <span class="eq-def">how fast the system is changing</span>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
 <body>
 
 </body>
