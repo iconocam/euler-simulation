@@ -299,7 +299,19 @@ em {
   .core-idea {
   color: var(--accent);
   letter-spacing: 0.12em;
-  font-size: 11px;
+  font-size: 14px;
+}
+
+.act-params .param-tag {
+  color: var(--accent);
+  font-size: 14px;
+  letter-spacing: 0.1em;
+}
+
+.act-eq {
+  color: var(--accent);
+  font-size: 14px;
+  letter-spacing: 0.1em;
 }
 </style>
 </head>
@@ -378,7 +390,7 @@ Given a state <em>y</em> and its rate of change <em>f(t, y)</em>, each step adva
 
 <p style="margin-bottom:16px;">
     This method is simple and first-order, yet surprisingly powerful. Its approximations introduce small errors, and those errors accumulate as the steps continue. But that accumulation is not just a limitation — it can also be revealing. </br>
-    <em class="core-idea">CORE IDEA:</em>
+    <em class="core-idea">CORE IDEA: Euler's method is the mathematics of creatures who cannot see the future but must move through it anyway — which is to say, it is the mathematics of everything alive.</em>
     In many biological systems, where precision is never perfect and processes drift over time, Euler’s step feels almost honest. It lets us watch change unfold step by step, the way it often does in nature.
   </p>
 
@@ -389,6 +401,26 @@ Given a state <em>y</em> and its rate of change <em>f(t, y)</em>, each step adva
 
   <hr class="divider">
 
+<!-- ── Simulations ────────────────────────────────────── -->
+  <div class="section-label">Simulations</div>
+
+  <!-- Act I -->
+  <div class="act-card" style="--stripe-color: #00ffcc;">
+    <div class="act-header">
+      <span class="act-num">Act I</span>
+      <span class="act-status wip">placeholder</span>
+    </div>
+    <div class="act-title">Biological Decay</div>
+    <div class="act-eq">dE/dt = &minus;&lambda;E</div>
+    <p class="act-desc">
+      The Memory:
+A vivid memory right after the event is overwhelming — sensory, emotional, present-tense in its intensity. A year later it's softer. A decade later, softer still. Not because the event mattered less — but because the gap between the memory's intensity and baseline reality closes over time. The decay rate is proportional to the distance from ordinary.
+    </p>
+    <div class="act-params">
+      <span class="param-tag">&lambda; decay constant</span>
+      <span class="param-tag">initial state E&#x2080;</span>
+    </div>
+  </div>
 
 
 
