@@ -4,7 +4,747 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Node Decay — Act II</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #030810;
+    --panel:   rgba(4, 18, 38, 0.92);
+    --border:  rgba(0, 200, 255, 0.10);
+    --text:    rgba(140, 200, 255, 0.80);
+    --dim:     rgba(80, 130, 180, 0.55);
+    --accent:  #00ffcc;
+    --warn:    #ffaa00;
+    --red:     #ff3200;
+    --green:   #00ff44;
+    --font:    'Courier New', 'Lucida Console', monospace;
+    --sidebar: 260px;
+    --bar:     64px;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(
+      to bottom, transparent, transparent 2px,
+      rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  #layout {
+    display: grid;
+    grid-template-columns: var(--sidebar) 1fr;
+    grid-template-rows: 1fr var(--bar);
+    width: 100vw; height: 100vh;
+  }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    grid-column: 1; grid-row: 1;
+    border-right: 1px solid var(--border);
+    background: var(--panel);
+    padding: 24px 20px;
+    overflow-y: auto;
+    display: flex; flex-direction: column; gap: 28px;
+  }
+
+  .sidebar-header .label {
+    font-size: 9px; letter-spacing: 0.3em;
+    text-transform: uppercase; color: var(--dim); margin-bottom: 10px;
+  }
+  .sidebar-header h1 {
+    font-size: 22px; font-weight: normal; color: var(--accent);
+    text-shadow: 0 0 20px rgba(0,255,204,0.3);
+    line-height: 1.3; margin-bottom: 8px;
+  }
+  .sidebar-header p { font-size: 11px; color: var(--dim); line-height: 1.6; }
+
+  .eq-box {
+    background: rgba(0,200,255,0.04);
+    border: 1px solid var(--border);
+    border-left: 3px solid rgba(0,200,255,0.35);
+    padding: 14px 16px;
+  }
+  .eq-main {
+    font-size: 15px; color: var(--warn);
+    text-shadow: 0 0 12px rgba(255,170,0,0.4);
+    letter-spacing: 0.05em; margin-bottom: 8px;
+  }
+  .eq-live { font-size: 11px; color: var(--dim); letter-spacing: 0.06em; }
+  .eq-live span { color: var(--accent); }
+
+  .section-label {
+    font-size: 9px; letter-spacing: 0.3em;
+    text-transform: uppercase; color: var(--dim); margin-bottom: 14px;
+  }
+
+  .param-block { display: flex; flex-direction: column; gap: 16px; }
+  .param-row   { display: flex; flex-direction: column; gap: 4px; }
+  .param-label-row { display: flex; justify-content: space-between; align-items: baseline; }
+  .param-name  { font-size: 11px; color: var(--text); letter-spacing: 0.08em; }
+  .param-val   { font-size: 11px; color: var(--accent); letter-spacing: 0.06em; min-width: 48px; text-align: right; }
+
+  input[type=range] {
+    -webkit-appearance: none; width: 100%; height: 2px;
+    background: rgba(0,200,255,0.15); outline: none; cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%;
+    background: var(--accent); box-shadow: 0 0 8px rgba(0,255,204,0.6); cursor: pointer;
+  }
+
+  .state-block { display: flex; flex-direction: column; gap: 6px; }
+  .state-row   { display: flex; justify-content: space-between; align-items: baseline; padding: 2px 0; }
+  .state-name  { font-size: 11px; color: var(--dim); letter-spacing: 0.08em; }
+  .state-val   { font-size: 12px; font-weight: bold; letter-spacing: 0.06em; min-width: 32px; text-align: right; }
+  .state-val.green { color: var(--green);  text-shadow: 0 0 8px rgba(0,255,68,0.5); }
+  .state-val.cyan  { color: var(--accent); text-shadow: 0 0 8px rgba(0,255,204,0.4); }
+  .state-val.warn  { color: var(--warn);   text-shadow: 0 0 8px rgba(255,170,0,0.4); }
+  .state-val.red   { color: var(--red);    text-shadow: 0 0 8px rgba(255,50,0,0.4); }
+  .state-val.dim   { color: var(--dim); }
+
+  .legend-block { display: flex; flex-direction: column; gap: 8px; }
+  .legend-row   { display: flex; align-items: center; gap: 10px; }
+  .legend-dot   { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .legend-text  { font-size: 10px; color: var(--dim); letter-spacing: 0.05em; }
+
+  /* ── Canvas ── */
+  #canvas-area {
+    grid-column: 2; grid-row: 1;
+    position: relative; overflow: hidden;
+    cursor: crosshair;
+  }
+  #sim-canvas { display: block; width: 100%; height: 100%; }
+
+  #canvas-label {
+    position: absolute; top: 16px; left: 20px;
+    font-size: 9px; letter-spacing: 0.25em;
+    text-transform: uppercase; color: rgba(0,200,255,0.35);
+    pointer-events: none;
+  }
+
+  /* ── Hover tooltip ── */
+  #tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: rgba(2, 12, 28, 0.92);
+    border: 1px solid rgba(0,200,255,0.25);
+    padding: 10px 14px;
+    font-size: 11px;
+    line-height: 1.8;
+    color: var(--text);
+    display: none;
+    min-width: 160px;
+    z-index: 100;
+  }
+  #tooltip .tt-title { color: var(--accent); font-size: 10px; letter-spacing: 0.2em; margin-bottom: 4px; }
+  #tooltip .tt-bar-wrap { margin-top: 4px; height: 3px; background: rgba(255,255,255,0.08); }
+  #tooltip .tt-bar { height: 100%; transition: none; }
+
+  /* ── Mini chart ── */
+  #mini-chart-wrap { position: absolute; bottom: 16px; right: 16px; width: 180px; }
+  #mini-chart-label { font-size: 8px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dim); margin-bottom: 4px; }
+  #mini-chart { display: block; border: 1px solid var(--border); background: rgba(0,0,0,0.4); }
+
+  /* ── Bottom bar ── */
+  #bottom-bar {
+    grid-column: 1 / -1; grid-row: 2;
+    border-top: 1px solid var(--border);
+    background: var(--panel);
+    display: flex; align-items: center;
+    padding: 0 24px; gap: 24px;
+  }
+
+  .bar-btn {
+    font-family: var(--font); font-size: 10px;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    cursor: pointer; border: 1px solid;
+    padding: 8px 20px; background: transparent;
+    transition: all 0.2s; white-space: nowrap; color: inherit;
+  }
+  #btn-inject { color: var(--green);  border-color: rgba(0,255,68,0.5); }
+  #btn-inject:hover { background: rgba(0,255,68,0.08); box-shadow: 0 0 16px rgba(0,255,68,0.2); }
+  #btn-pause  { color: var(--accent); border-color: rgba(0,200,255,0.35); }
+  #btn-pause:hover  { background: rgba(0,200,255,0.06); }
+  #btn-reset  { color: var(--warn);   border-color: rgba(255,170,0,0.3); }
+  #btn-reset:hover  { background: rgba(255,170,0,0.06); }
+
+  #vitality-wrap  { flex: 1; display: flex; align-items: center; gap: 14px; }
+  #vitality-label { font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
+  #vitality-track { flex: 1; height: 4px; background: rgba(0,200,255,0.08); position: relative; }
+  #vitality-fill  { height: 100%; background: var(--green); box-shadow: 0 0 8px rgba(0,255,68,0.6); transition: width 0.3s, background 0.3s; width: 100%; }
+  #vitality-pct   { font-size: 12px; color: var(--green); letter-spacing: 0.08em; min-width: 36px; text-align: right; }
+</style>
+</head>
+<body>
+
+<div id="layout">
+
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <div class="label">Neural Vitality Field</div>
+      <h1>Node Decay<br>Simulation</h1>
+      <p>Every node obeys e<sup>−λt</sup>. Every connection remembers what it once carried. Hover a node to read its state.</p>
+    </div>
+
+    <div class="eq-box">
+      <div class="eq-main">dE/dt = &minus;&lambda;E + &beta;(&#274;<sub>nbr</sub> &minus; E)</div>
+      <div class="eq-live">
+        e<sup>&minus;&lambda;t</sup> = <span id="live-decay">1.0000</span>
+        &nbsp;|&nbsp; t = <span id="live-time">0s</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Parameters</div>
+      <div class="param-block">
+        <div class="param-row">
+          <div class="param-label-row">
+            <span class="param-name">Decay Rate &lambda;</span>
+            <span class="param-val" id="val-lambda">0.0008</span>
+          </div>
+          <input type="range" id="slider-lambda" min="0.0001" max="0.005" step="0.0001" value="0.0008">
+        </div>
+        <div class="param-row">
+          <div class="param-label-row">
+            <span class="param-name">Learning Boost &beta;</span>
+            <span class="param-val" id="val-beta">0.35</span>
+          </div>
+          <input type="range" id="slider-beta" min="0" max="1" step="0.01" value="0.35">
+        </div>
+        <div class="param-row">
+          <div class="param-label-row">
+            <span class="param-name">Time Scale</span>
+            <span class="param-val" id="val-timescale">1.0&times;</span>
+          </div>
+          <input type="range" id="slider-timescale" min="0.1" max="5" step="0.1" value="1">
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">System State</div>
+      <div class="state-block">
+        <div class="state-row"><span class="state-name">Vitality</span>  <span class="state-val green" id="stat-vitality">100%</span></div>
+        <div class="state-row"><span class="state-name">Thriving</span>  <span class="state-val green" id="stat-thriving">0</span></div>
+        <div class="state-row"><span class="state-name">Declining</span> <span class="state-val warn"  id="stat-declining">0</span></div>
+        <div class="state-row"><span class="state-name">Critical</span>  <span class="state-val red"   id="stat-critical">0</span></div>
+        <div class="state-row"><span class="state-name">Dead</span>      <span class="state-val dim"   id="stat-dead">0</span></div>
+        <div class="state-row"><span class="state-name">Feedings</span> <span class="state-val cyan"  id="stat-feedings">0</span></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Node States</div>
+      <div class="legend-block">
+        <div class="legend-row"><div class="legend-dot" style="background:#00ff44;box-shadow:0 0 6px #00ff44"></div><span class="legend-text">Thriving (v &gt; 0.7)</span></div>
+        <div class="legend-row"><div class="legend-dot" style="background:#00ffcc;box-shadow:0 0 6px #00ffcc"></div><span class="legend-text">Stable (0.5 – 0.7)</span></div>
+        <div class="legend-row"><div class="legend-dot" style="background:#ffaa00;box-shadow:0 0 6px #ffaa00"></div><span class="legend-text">Declining (0.25 – 0.5)</span></div>
+        <div class="legend-row"><div class="legend-dot" style="background:#ff6600;box-shadow:0 0 6px #ff6600"></div><span class="legend-text">Critical (&lt; 0.25)</span></div>
+        <div class="legend-row"><div class="legend-dot" style="background:#550000"></div><span class="legend-text">Dead (decomposing)</span></div>
+      </div>
+    </div>
+  </aside>
+
+  <div id="canvas-area">
+    <canvas id="sim-canvas"></canvas>
+    <div id="canvas-label">Euler Simulation — Act II</div>
+
+    <div id="tooltip">
+      <div class="tt-title" id="tt-title">NODE —</div>
+      <div id="tt-body"></div>
+      <div class="tt-bar-wrap"><div class="tt-bar" id="tt-bar"></div></div>
+    </div>
+
+    <div id="mini-chart-wrap">
+      <div id="mini-chart-label">Vitality Over Time</div>
+      <canvas id="mini-chart" width="180" height="60"></canvas>
+    </div>
+  </div>
+
+  <div id="bottom-bar">
+    <button class="bar-btn" id="btn-inject">&#8593; Inject Learning</button>
+    <div id="vitality-wrap">
+      <span id="vitality-label">System Vitality</span>
+      <div id="vitality-track"><div id="vitality-fill"></div></div>
+      <span id="vitality-pct">100%</span>
+    </div>
+    <button class="bar-btn" id="btn-pause">&#9646;&#9646; Pause</button>
+    <button class="bar-btn" id="btn-reset">&#8635; Reset</button>
+  </div>
+
+</div>
+
 <script>
+// ─────────────────────────────────────────────────────────
+//  CONFIG
+// ─────────────────────────────────────────────────────────
+const NODE_COUNT  = 48;
+const EDGE_CHANCE = 0.12;
+
+// ─────────────────────────────────────────────────────────
+//  LIVE PARAMETERS
+// ─────────────────────────────────────────────────────────
+const params = { lambda: 0.0008, beta: 0.35, timeScale: 1.0 };
+
+// ─────────────────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────────────────
+let nodes    = [];
+let edges    = [];
+let pulses   = [];      // travelling sparks along edges
+let isPaused = false;
+let feedings = 0;
+let simTime  = 0;
+let vitalityHistory = [];
+
+// hover
+let hoveredNode = null;  // index or null
+
+// ─────────────────────────────────────────────────────────
+//  CANVAS SETUP
+// ─────────────────────────────────────────────────────────
+const canvas   = document.getElementById('sim-canvas');
+const ctx      = canvas.getContext('2d');
+const miniCanvas = document.getElementById('mini-chart');
+const miniCtx    = miniCanvas.getContext('2d');
+const canvasArea = document.getElementById('canvas-area');
+
+function resizeCanvas() {
+  canvas.width  = canvasArea.clientWidth;
+  canvas.height = canvasArea.clientHeight;
+}
+window.addEventListener('resize', () => { resizeCanvas(); buildNetwork(); });
+
+// ─────────────────────────────────────────────────────────
+//  NETWORK BUILDER
+// ─────────────────────────────────────────────────────────
+function buildNetwork() {
+  nodes  = [];
+  edges  = [];
+  pulses = [];
+
+  const W = canvas.width, H = canvas.height, m = 60;
+
+  for (let i = 0; i < NODE_COUNT; i++) {
+    nodes.push({
+      x: m + Math.random() * (W - m * 2),
+      y: m + Math.random() * (H - m * 2),
+      E: 0.85 + Math.random() * 0.15,
+      resilience: 0,
+      neighbours: []
+    });
+  }
+
+  for (let i = 0; i < NODE_COUNT; i++) {
+    for (let j = i + 1; j < NODE_COUNT; j++) {
+      if (Math.random() < EDGE_CHANCE) edges.push([i, j]);
+    }
+  }
+
+  // guarantee no isolated nodes
+  for (let i = 0; i < NODE_COUNT; i++) {
+    if (!edges.some(e => e[0] === i || e[1] === i)) {
+      const j = (i + 1 + Math.floor(Math.random() * (NODE_COUNT - 1))) % NODE_COUNT;
+      edges.push([Math.min(i,j), Math.max(i,j)]);
+    }
+  }
+
+  edges.forEach(([a, b]) => {
+    nodes[a].neighbours.push(b);
+    nodes[b].neighbours.push(a);
+  });
+}
+
+// ─────────────────────────────────────────────────────────
+//  EULER STEP
+// ─────────────────────────────────────────────────────────
+function eulerStep(dt) {
+  const deltas = nodes.map(node => {
+    if (node.E <= 0) return 0;
+    let avgNbr = 0;
+    if (node.neighbours.length > 0) {
+      avgNbr = node.neighbours.reduce((s, idx) => s + nodes[idx].E, 0) / node.neighbours.length;
+    }
+    const effLambda = Math.max(0, params.lambda - node.resilience);
+    return -effLambda * node.E + params.beta * (avgNbr - node.E);
+  });
+  nodes.forEach((n, i) => { n.E = Math.max(0, Math.min(1, n.E + dt * deltas[i])); });
+}
+
+// ─────────────────────────────────────────────────────────
+//  COLOUR HELPERS
+// ─────────────────────────────────────────────────────────
+// Returns [r,g,b] for a given energy 0–1
+function energyRGB(E) {
+  if (E <= 0)    return [40, 0, 0];
+  if (E < 0.25)  return [255, 60, 0];
+  if (E < 0.50)  return [255, 170, 0];
+  if (E < 0.70)  return [0, 255, 204];
+  return                [0, 255, 68];
+}
+
+function rgbStr(r, g, b, a = 1) {
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+// ─────────────────────────────────────────────────────────
+//  PULSE SPAWNER  — fire a spark along an edge when energy flows
+// ─────────────────────────────────────────────────────────
+function maybeSpawnPulse(edgeIdx) {
+  const [a, b] = edges[edgeIdx];
+  const Ea = nodes[a].E, Eb = nodes[b].E;
+  if (Ea <= 0 && Eb <= 0) return;
+
+  // spawn probability proportional to energy delta between endpoints
+  const delta = Math.abs(Ea - Eb);
+  if (Math.random() < delta * 0.04) {
+    // pulse travels from higher-energy node to lower
+    const fromIdx = Ea >= Eb ? a : b;
+    const toIdx   = Ea >= Eb ? b : a;
+    pulses.push({
+      edgeIdx,
+      fromIdx,
+      toIdx,
+      t:     0,        // 0 → 1 along the edge
+      speed: 0.4 + Math.random() * 0.6
+    });
+  }
+}
+
+function updatePulses(dt) {
+  for (let i = pulses.length - 1; i >= 0; i--) {
+    pulses[i].t += dt * pulses[i].speed;
+    if (pulses[i].t >= 1) pulses.splice(i, 1);
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+//  DRAW
+// ─────────────────────────────────────────────────────────
+// We use a slow oscillating time for the edge glow pulse
+let glowPhase = 0;
+
+function draw(dt) {
+  glowPhase += dt * 1.8;
+
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // ── Edges ──────────────────────────────────────────────
+  edges.forEach(([a, b], edgeIdx) => {
+    const na = nodes[a], nb = nodes[b];
+    const avgE = (na.E + nb.E) / 2;
+    if (avgE <= 0) return;
+
+    const [r, g, bl] = energyRGB(avgE);
+
+    // base opacity — fades as nodes lose energy
+    const baseAlpha = 0.08 + avgE * 0.18;
+
+    // slow sinusoidal "heartbeat" — each edge offset by its index so they don't all pulse together
+    const phase   = glowPhase + edgeIdx * 0.37;
+    const pulse   = 0.5 + 0.5 * Math.sin(phase);        // 0 → 1
+    const glowAlpha = baseAlpha + pulse * avgE * 0.25;
+
+    // highlight edges connected to the hovered node
+    const isHovered = hoveredNode !== null && (a === hoveredNode || b === hoveredNode);
+    const lineWidth = isHovered ? 2.5 : 1;
+    const finalAlpha = isHovered ? Math.min(1, glowAlpha * 2.5) : glowAlpha;
+
+    // glow layer (wide, low alpha)
+    ctx.beginPath();
+    ctx.moveTo(na.x, na.y);
+    ctx.lineTo(nb.x, nb.y);
+    ctx.strokeStyle = rgbStr(r, g, bl, finalAlpha * 0.4);
+    ctx.lineWidth   = lineWidth + 4;
+    ctx.shadowColor = rgbStr(r, g, bl, 0.6);
+    ctx.shadowBlur  = isHovered ? 18 : 8 + pulse * 6 * avgE;
+    ctx.stroke();
+
+    // sharp core line
+    ctx.beginPath();
+    ctx.moveTo(na.x, na.y);
+    ctx.lineTo(nb.x, nb.y);
+    ctx.strokeStyle = rgbStr(r, g, bl, finalAlpha + 0.15);
+    ctx.lineWidth   = lineWidth;
+    ctx.shadowBlur  = 0;
+    ctx.stroke();
+  });
+
+  ctx.shadowBlur = 0;
+
+  // ── Travelling pulses ───────────────────────────────────
+  pulses.forEach(p => {
+    const [a, b] = edges[p.edgeIdx];
+    const na = nodes[p.fromIdx], nb = nodes[p.toIdx];
+    const x = na.x + (nb.x - na.x) * p.t;
+    const y = na.y + (nb.y - na.y) * p.t;
+    const srcE = na.E;
+    const [r, g, bl] = energyRGB(srcE);
+    const alpha = (1 - p.t) * 0.9;  // fades as it travels
+
+    ctx.beginPath();
+    ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle   = rgbStr(r, g, bl, alpha);
+    ctx.shadowColor = rgbStr(r, g, bl, alpha * 0.8);
+    ctx.shadowBlur  = 10;
+    ctx.fill();
+  });
+
+  ctx.shadowBlur = 0;
+
+  // ── Nodes ───────────────────────────────────────────────
+  nodes.forEach((node, i) => {
+    const [r, g, bl] = energyRGB(node.E);
+    const isHov   = i === hoveredNode;
+    const radius  = 5 + node.E * 6;
+    const glowAmt = isHov ? 28 : (10 + node.E * 14);
+
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, radius + (isHov ? 3 : 0), 0, Math.PI * 2);
+    ctx.fillStyle   = rgbStr(r, g, bl);
+    ctx.shadowColor = rgbStr(r, g, bl, 0.7);
+    ctx.shadowBlur  = glowAmt;
+    ctx.fill();
+
+    // ring on hover
+    if (isHov) {
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, radius + 8, 0, Math.PI * 2);
+      ctx.strokeStyle = rgbStr(r, g, bl, 0.4);
+      ctx.lineWidth   = 1;
+      ctx.shadowBlur  = 0;
+      ctx.stroke();
+    }
+  });
+
+  ctx.shadowBlur = 0;
+}
+
+// ─────────────────────────────────────────────────────────
+//  HOVER  — find closest node within hit radius
+// ─────────────────────────────────────────────────────────
+const tooltip = document.getElementById('tooltip');
+
+canvasArea.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  let closest = null, minDist = Infinity;
+  nodes.forEach((node, i) => {
+    const d = Math.hypot(node.x - mx, node.y - my);
+    if (d < minDist) { minDist = d; closest = i; }
+  });
+
+  const HIT_RADIUS = 28;
+  if (minDist < HIT_RADIUS) {
+    hoveredNode = closest;
+    showTooltip(closest, mx, my);
+  } else {
+    hoveredNode = null;
+    tooltip.style.display = 'none';
+  }
+});
+
+canvasArea.addEventListener('mouseleave', () => {
+  hoveredNode = null;
+  tooltip.style.display = 'none';
+});
+
+function showTooltip(idx, mx, my) {
+  const cx = mx, cy = my;
+  const node  = nodes[idx];
+  const E     = node.E;
+  const pct   = Math.round(E * 100);
+  const [r, g, bl] = energyRGB(E);
+  const color = `rgb(${r},${g},${bl})`;
+
+  let state;
+  if (E <= 0)   state = 'DEAD';
+  else if (E < 0.25) state = 'CRITICAL';
+  else if (E < 0.50) state = 'DECLINING';
+  else if (E < 0.70) state = 'STABLE';
+  else               state = 'THRIVING';
+
+  const resiliencePct = Math.round((node.resilience / params.lambda) * 100);
+  const neighbours    = node.neighbours.length;
+
+  document.getElementById('tt-title').textContent = `NODE ${String(idx).padStart(2,'0')} — ${state}`;
+  document.getElementById('tt-title').style.color = color;
+  document.getElementById('tt-body').innerHTML =
+    `Vitality: <span style="color:${color}">${pct}%</span><br>` +
+    `Resilience: <span style="color:${color}">${resiliencePct}%</span><br>` +
+    `Connections: <span style="color:${color}">${neighbours}</span>`;
+  document.getElementById('tt-bar').style.width      = pct + '%';
+  document.getElementById('tt-bar').style.background = color;
+  document.getElementById('tt-bar').style.boxShadow  = `0 0 8px ${color}`;
+
+  // position tooltip — clamp within canvas-area bounds
+  const TW = 170, TH = 96;
+  const areaW = canvasArea.clientWidth;
+  const areaH = canvasArea.clientHeight;
+  let tx = cx + 16, ty = cy - TH / 2;
+  if (tx + TW > areaW - 8) tx = cx - TW - 16;   // flip left
+  if (tx < 8)              tx = 8;               // left wall
+  if (ty < 8)              ty = 8;               // top wall
+  if (ty + TH > areaH - 8) ty = areaH - TH - 8; // bottom wall
+
+  tooltip.style.left    = tx + 'px';
+  tooltip.style.top     = ty + 'px';
+  tooltip.style.display = 'block';
+}
+
+// ─────────────────────────────────────────────────────────
+//  UI UPDATE
+// ─────────────────────────────────────────────────────────
+function updateUI() {
+  let thriving = 0, declining = 0, critical = 0, dead = 0, totalE = 0;
+  nodes.forEach(n => {
+    totalE += n.E;
+    if      (n.E > 0.7)  thriving++;
+    else if (n.E > 0.25) declining++;
+    else if (n.E > 0)    critical++;
+    else                 dead++;
+  });
+
+  const vitality = Math.round((totalE / nodes.length) * 100);
+
+  document.getElementById('stat-vitality').textContent  = vitality + '%';
+  document.getElementById('stat-thriving').textContent  = thriving;
+  document.getElementById('stat-declining').textContent = declining;
+  document.getElementById('stat-critical').textContent  = critical;
+  document.getElementById('stat-dead').textContent      = dead;
+  document.getElementById('stat-feedings').textContent  = feedings;
+
+  const fill = document.getElementById('vitality-fill');
+  fill.style.width = vitality + '%';
+  fill.style.background = vitality > 70 ? '#00ff44' : vitality > 40 ? '#ffaa00' : '#ff3200';
+
+  document.getElementById('vitality-pct').textContent = vitality + '%';
+  document.getElementById('live-decay').textContent   = Math.exp(-params.lambda * simTime).toFixed(4);
+  document.getElementById('live-time').textContent    = Math.round(simTime) + 's';
+
+  vitalityHistory.push(vitality);
+  if (vitalityHistory.length > 180) vitalityHistory.shift();
+  drawMiniChart();
+}
+
+function drawMiniChart() {
+  const W = miniCanvas.width, H = miniCanvas.height;
+  miniCtx.clearRect(0, 0, W, H);
+  if (vitalityHistory.length < 2) return;
+  miniCtx.beginPath();
+  vitalityHistory.forEach((v, i) => {
+    const x = (i / (vitalityHistory.length - 1)) * W;
+    const y = H - (v / 100) * H;
+    i === 0 ? miniCtx.moveTo(x, y) : miniCtx.lineTo(x, y);
+  });
+  miniCtx.strokeStyle = '#00ff44';
+  miniCtx.lineWidth   = 1.5;
+  miniCtx.shadowColor = 'rgba(0,255,68,0.5)';
+  miniCtx.shadowBlur  = 4;
+  miniCtx.stroke();
+  miniCtx.shadowBlur  = 0;
+}
+
+// ─────────────────────────────────────────────────────────
+//  INJECT LEARNING
+// ─────────────────────────────────────────────────────────
+function injectLearning() {
+  feedings++;
+  nodes.forEach(node => {
+    node.E          = Math.min(1.0, node.E + 0.15);
+    node.resilience = Math.min(params.lambda * 0.6, node.resilience + params.lambda * 0.05);
+  });
+
+  // fire a burst of pulses from all edges
+  edges.forEach((_, i) => {
+    if (Math.random() < 0.6) {
+      const [a, b] = edges[i];
+      pulses.push({ edgeIdx: i, fromIdx: a, toIdx: b, t: 0, speed: 0.8 + Math.random() });
+    }
+  });
+
+  const btn = document.getElementById('btn-inject');
+  btn.style.background = 'rgba(0,255,68,0.2)';
+  btn.style.boxShadow  = '0 0 24px rgba(0,255,68,0.4)';
+  setTimeout(() => { btn.style.background = ''; btn.style.boxShadow = ''; }, 200);
+}
+
+// ─────────────────────────────────────────────────────────
+//  MAIN LOOP
+// ─────────────────────────────────────────────────────────
+let lastTime = null;
+
+function loop(timestamp) {
+  if (lastTime === null) lastTime = timestamp;
+  const elapsed = Math.min((timestamp - lastTime) / 1000, 0.05); // cap at 50ms
+  lastTime = timestamp;
+
+  if (!isPaused) {
+    const dt = elapsed * params.timeScale;
+    simTime += dt;
+    eulerStep(dt);
+    updatePulses(dt);
+
+    // randomly spawn new pulses each frame
+    edges.forEach((_, i) => maybeSpawnPulse(i));
+
+    updateUI();
+  }
+
+  draw(elapsed);
+  requestAnimationFrame(loop);
+}
+
+// ─────────────────────────────────────────────────────────
+//  SLIDERS
+// ─────────────────────────────────────────────────────────
+document.getElementById('slider-lambda').addEventListener('input', function() {
+  params.lambda = parseFloat(this.value);
+  document.getElementById('val-lambda').textContent = params.lambda.toFixed(4);
+});
+document.getElementById('slider-beta').addEventListener('input', function() {
+  params.beta = parseFloat(this.value);
+  document.getElementById('val-beta').textContent = params.beta.toFixed(2);
+});
+document.getElementById('slider-timescale').addEventListener('input', function() {
+  params.timeScale = parseFloat(this.value);
+  document.getElementById('val-timescale').textContent = params.timeScale.toFixed(1) + '×';
+});
+
+// ─────────────────────────────────────────────────────────
+//  BUTTONS
+// ─────────────────────────────────────────────────────────
+document.getElementById('btn-inject').addEventListener('click', injectLearning);
+document.getElementById('btn-pause').addEventListener('click', function() {
+  isPaused = !isPaused;
+  this.textContent = isPaused ? '▶ Resume' : '⏸ Pause';
+});
+document.getElementById('btn-reset').addEventListener('click', function() {
+  feedings = 0; simTime = 0; vitalityHistory = []; lastTime = null;
+  buildNetwork();
+});
+
+// ─────────────────────────────────────────────────────────
+//  BOOT
+// ─────────────────────────────────────────────────────────
+resizeCanvas();
+buildNetwork();
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
