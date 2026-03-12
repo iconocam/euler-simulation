@@ -313,6 +313,17 @@ em {
   font-size: 14px;
   letter-spacing: 0.1em;
 }
+
+/* button {
+color:var(--accent);
+border-color:var(--accent);
+position: ;
+} */
+
+/* button:hover {
+  border-color:var(--accent);
+  background-color: black;
+} */
 </style>
 </head>
 <body>
@@ -395,20 +406,20 @@ Given a state <em>y</em> and its rate of change <em>f(t, y)</em>, each step adva
   </p>
 
   <p>
-    Each simulation below applies this step to a different system.
+    The simulation below applies this step to a different system.
     The parameters are yours to control.
   </p>
 
   <hr class="divider">
 
-<!-- ── Simulations ────────────────────────────────────── -->
-  <div class="section-label">Simulations</div>
+<!-- ── Simulation ────────────────────────────────────── -->
+  <div class="section-label">Simulation</div>
 
   <!-- Act I -->
   <div class="act-card" style="--stripe-color: #00ffcc;">
     <div class="act-header">
       <span class="act-num">Act I</span>
-      <span class="act-status wip">placeholder</span>
+      <span class="act-status wip">[1]</span>
     </div>
     <div class="act-title">Biological Decay</div>
     <div class="act-eq">dE/dt = &minus;&lambda;E</div>
@@ -416,23 +427,66 @@ Given a state <em>y</em> and its rate of change <em>f(t, y)</em>, each step adva
       The Memory:
 A vivid memory right after the event is overwhelming — sensory, emotional, present-tense in its intensity. A year later it's softer. A decade later, softer still. Not because the event mattered less — but because the gap between the memory's intensity and baseline reality closes over time. The decay rate is proportional to the distance from ordinary.
     </p>
+
     <div class="act-params">
       <span class="param-tag">&lambda; decay constant</span>
       <span class="param-tag">initial state E&#x2080;</span>
     </div>
+  <a class="act-link" href="#">Open Simulation &rarr;</a>
+    </div>
+
+<!-- Act II -->
+  <div class="act-card" style="--stripe-color: #ffa000;">
+    <div class="act-header">
+      <span class="act-num">Act II</span>
+      <span class="act-status wip">[2]</span>
+    </div>
+    <div class="act-title">Network Decay</div>
+    <div class="act-eq">dE/dt &nbsp;=&nbsp; &minus;&lambda;E &nbsp;+&nbsp; &beta;(E&#x0304;<sub>nbr</sub> &minus; E)</div>
+    <p class="act-desc">
+      Each node is losing energy until decay while drawing sustenance from neighboring nodes.
+      A second parameter: <em>learning boost</em> — the rate at which a node
+      equilibrates toward its local average. When &beta; is too low,
+      the network collapses node by node. When &beta; is high enough,
+      resilience emerges from connectivity.
+    </p>
+    <div class="act-params">
+      <span class="param-tag">&lambda; decay rate</span>
+      <span class="param-tag">&beta; learning boost</span>
+      <span class="param-tag">time scale</span>
+    </div>
+    <a class="act-link" href="node-decay.html">Open Simulation &rarr;</a>
   </div>
 
 
 
 
+  <hr class="divider">
 
 
+  <div class="section-label">Decay</div>
+
+  <p style="margin-bottom: 16px;">
+    The question is always the same:
+    <em>how long can organization hold?</em>
+  </p>
+
+  <p style="margin-bottom: 16px;">
+    The Euler method gives us a window.
+  </p>
+
+  <p>
+    This is, perhaps, what all models are: a resolution we choose,
+    and a faith that the steps we take are small enough
+    to not lie too badly about the world.
+  </p>
 
 
+  <footer>
+    <span>euler-simulation / main</span>
+    <span>fields-of-decay &mdash; 2026</span>
+  </footer>
 
-
-
-<body>
-
+</div>
 </body>
 </html>
